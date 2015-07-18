@@ -13,11 +13,30 @@
 	"默认的任务")
   (defvar elake--user-params-alist nil
 	"存放用户通过命令行传递过来的参数")
+  (defun elake--file-task-p (task)
+	"判断`task'是否为file类型的任务,这种类型的任务采取make的方式处理,需要判断依赖文件和目标文件的更新时间. 若是file类型的任务,则返回对应的file路径,否则返回nil
+
+不已:开头的任务为file类型"
+	(let ((task-name (format "%s" task)))
+	  (unless (string-prefix-p ":" task-name)
+		task-name)))
+
+  (defalias 'elake--get-path-from-file-task 'elake--file-task-p
+	"若`task'为file类型的task,则返回对应的file path")
+
+  (defun elake--phony-task-p (task)
+	"判断`task'是否为phony类型的任务,这种类型的任务采取ant的方式处理,单纯的执行被依赖的任务
+
+非file类型的任务就是phony类型的任务"
+	(not (elake--file-task-p task)))
+  
   (defun elake--get-namespace-task (task)
 	"获取task在namespace环境中的名称"
-	(if elake--ns
-		(intern (format "%s:%s" elake--ns task))
+	(if (and elake--ns
+			 (elake--phony-task-p task))
+		(intern (format ":%s%s" elake--ns task))
 	  task))
+  
   (defun elake--valid-task-p (task)
 	"判断`task'是否为已定义的任务,若为已定义任务则返回`task',否则返回nil"
 	(when (member task (hash-table-keys elake-task-relationship))
@@ -30,7 +49,7 @@
   (let ((elake--ns ns))
 	`(progn
 	   ,@(mapcar #'macroexpand body))
-  ))
+	))
 ;; 定义task
 (defmacro elake-task (task prepare-task-list &optional doc-string &rest body)
   "使用elask-task宏来定义task"
@@ -70,7 +89,7 @@
   `(push '(,(format "^%s$" rule) ,prepare-rule-list ,body) elake-rule-template-alist))
 
 (defun elake--generate-task-by-rule (task)
-  "根据规则模板来自动生成任务"
+  "根据规则模板来自动生成任务. 若能根据规则生成任务,则返回任务,否则返回nil"
   (let* ((task-name (format "%s" task))
 		 (template (assoc-if (lambda (rule)
 							   (string-match-p rule task-name)) elake-rule-template-alist)))
@@ -194,22 +213,6 @@
   (apply 'elake--show-options-help (command-line-get-args-to-next-option)))
 
 ;; 执行task函数
-(defun elake--file-task-p (task)
-  "判断`task'是否为file类型的任务,这种类型的任务采取make的方式处理,需要判断依赖文件和目标文件的更新时间. 若是file类型的任务,则返回对应的file路径
-
-file类型的任务以`:'开头"
-  (let ((task-name (format "%s" task)))
-	(when (string-prefix-p ":" task-name)
-	  (replace-regexp-in-string "^:" "" task-name))))
-
-(defalias 'elake--get-path-from-file-task 'elake--file-task-p
-  "若`task'为file类型的task,则返回对应的file path")
-
-(defun elake--phony-task-p (task)
-  "判断`task'是否为phony类型的任务,这种类型的任务采取ant的方式处理,单纯的执行被依赖的任务
-
-非file类型的任务就是phony类型的任务"
-  (not (elake--file-task-p task)))
 
 (defun elake--task-executed-p (task)
   "判断`task'是否已经执行"
@@ -232,10 +235,9 @@ file类型的任务以`:'开头"
 
 (defun elake--execute-task (task)
   "运行`task'标识的任务,会预先运行它的prepare-tasks"
-  (unless (elake--valid-task-p task)
-	(elake--generate-task-by-rule task))
-  (unless (elake--valid-task-p task)
-	(error "未定义的任务:%s"task ))
+  (or (elake--valid-task-p task)
+	  (elake--generate-task-by-rule task)
+	  (error "未定义的任务:%s"task ))
   (let ((prepare-task-list (elake--get-task-preparations task)))
 	;; 执行预备条件
 	(when prepare-task-list
