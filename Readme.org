@@ -137,6 +137,28 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
   $ elake  who=darksun :say-hello-to
   hello to darksun
 #+END_EXAMPLE
+
+** 在任务中执行其他任务
+使用 =(elake-execute-task task)= 可以在任务内执行其他任务
+#+BEGIN_SRC emacs-lisp  :tangle elakefile.el
+  (elake-task :laundry nil
+    "洗衣服"
+    (message "把所有衣服扔进洗衣机。"))
+  (elake-task :today nil
+    "今天的任务"
+    (elake-execute-task :home:write-blog)
+    (elake-execute-task :laundry))
+#+END_SRC
+
+则调用:today任务,会以此执行:home:write-blog和:laundry任务
+#+BEGIN_EXAMPLE
+  $ elake :today
+  打开家里的电脑
+  在家写博客
+  把所有衣服扔进洗衣机。
+#+END_EXAMPLE
+
+** 
 * 待完成事项
 + [X] 增加file类型的任务
 + [X] 增加命名空间的支持
