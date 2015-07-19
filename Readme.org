@@ -98,6 +98,7 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
   未定义的任务::write-blog
 #+END_EXAMPLE
 
+目前支持命名空间的函数还有`elake-execute-task'和`elake-remove-task'
 ** 给任务传递环境变量值
 给elake传递形如"环境变量:=值"的参数,可以设定环境变量的值
 #+BEGIN_SRC emacs-lisp  :tangle elakefile.el
@@ -223,6 +224,11 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
 
 #+END_EXAMPLE
 
+** 其他参数说明
++ -f 配置文件路径 :: 使用指定的文件作为加载的配置文件. 默认使用`elakefile'或`elakefile.el'或`elakefile.elc'
++ --task 任务... :: 显示任务说明,若省略后面的任务,则显示所有任务说明
++ -p 任务... :: 显示任务的依赖任务,若省略后面的任务,则显示所有的任务依赖
++ -h :: 显示帮助信息
 * 待完成事项
 + [X] 增加file类型的任务
 + [X] 增加命名空间的支持
