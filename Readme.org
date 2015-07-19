@@ -190,7 +190,39 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
   未定义的任务::task-to-be-removed
 #+END_EXAMPLE
 
-** 
+** 使用规则自动生成任务
+使用 =(elake-rule 目标任务的匹配正则表达式 依赖任务的替代表达式列表 任务内容)= 来定义规则,当执行未定义的任务时,elake会尝试使用规则生成该任务.
+
+这里匹配正则表达式必须为字符串,替代表达式列表为字符串或字符串列表. 
+
+关于匹配正则表达式和替代表达式的说明请参见`replace-regexp'函数中的`REGEXP'和`TO-STRING'说明.
+
+例如:
+#+BEGIN_SRC emacs-lisp  :tangle elakefile.el
+  (elake-rule ":make-\\(.+\\)" ("\\1")
+    "测试rule"
+    (message (shell-command-to-string (format "ls -l %s" (car $@)))))
+
+  (elake-rule "[^:].*" nil
+    "测试rule"
+    (message "touch %s" $<)
+    (message (shell-command-to-string (format "touch %s" $<))))
+#+END_SRC
+
+可以使用:make-xxx任务来显示xxx文件的内容,且若xxx文件不存在则创建该文件
+#+BEGIN_EXAMPLE
+  $ ls -l rule
+  rule: No such file or directory
+  $ elake :make-rule
+  touch rule
+
+  -rw-rw-r-- 1 lujun9972 lujun9972 0  7月 19 11:53 rule
+
+  $ elake :make-rule
+  -rw-rw-r-- 1 lujun9972 lujun9972 0  7月 19 11:53 rule
+
+#+END_EXAMPLE
+
 * 待完成事项
 + [X] 增加file类型的任务
 + [X] 增加命名空间的支持
