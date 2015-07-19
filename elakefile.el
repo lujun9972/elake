@@ -1,50 +1,57 @@
-;; 可以使用(lexical-let)来模拟块域任务(Block Scoping  Tasks)
-(lexical-let ((who "somebody"))
-  (elake-task :say-hello (:wash) 
-	"say hello "
-	(message "hello %s" who)
-	(message "hello %s" who)))
-;; 可以通过elake 变量=值的方式給任务传递新变量
-(elake-task :say-hello-to  nil
-	"say hello to "
-	(message "hello to %s" who))
-;; 可以使用$<表示目标任务,$@表示依赖任务列表
-(elake-task :wash (wash) 
-  "wash faces"
-  (message "%s,%s" $< $@))
-;; :FILE-PATH格式的任务为文件任务
-(elake-task wash (bowl)
-  (shell-command "touch wash"))
-(elake-task bowl nil
-  (shell-command "touch bowl"))
-(elake-task :go-out (:say-hello  :wash)
-  (message "go out"))
-;; 使用(elake-namespace ns &rest body)定义命名空间
-(elake-namespace home
-	(elake-task :purchaseVegetables nil
-	  "任务1 -- 买菜"
-	  (message  "到沃尔玛去买菜。"))
-  (elake-task :cook (:purchaseVegetables)
-	"任务2 -- 做饭"
-	(message  "做一顿香喷喷的饭菜。")))
 
+(elake-task :purchaseVegetables nil
+      "任务1 -- 买菜"
+      (message  "到沃尔玛去买菜。"))
+
+(elake-task :cook (:purchaseVegetables)
+    "任务2 -- 做饭"
+    (message  "做一顿香喷喷的饭菜。"))
+
+(elake-task :task1 (/etc/passwd)
+  "测试自动变量"
+  (message "%s依赖于%s" $< $@))
+
+(elake-namespace home
+    (elake-task :write-blog (:turn-on-computer) ;注意,同一个命名空间内的依赖任务无需加命名空间前缀
+      "写博客"
+      (message  "在家写博客"))
+  (elake-task :turn-on-computer ()
+    "打开电脑"
+    (message  "打开家里的电脑")))
+
+(elake-task :set-env nil
+  "设置环境变量"
+  (message "UNKNOW-ENV:%s" (getenv "UNKNOW-ENV")))
+
+(elake-task :say-hello-to  nil
+    "给任务传递参数"
+    (message "hello to %s" who))
 
 (elake-task :laundry nil
-  "任务3 -- 洗衣服"
+  "洗衣服"
   (message "把所有衣服扔进洗衣机。"))
-;; 使用(elake-execute-task task)在任务内执行其他任务
 (elake-task :today nil
   "今天的任务"
-  (elake-execute-task :home:cook)
+  (elake-execute-task :home:write-blog)
   (elake-execute-task :laundry))
 
-;; 使用elake-rule定义规则模板,自动生成任务
-(elake-rule ":test-\\(.+\\)" ("\\1")
+(elake-task :task-to-be-removed nil
+  "待删除的任务"
+  (message "该任务会被:remove-task删除掉,删除掉后无法执行"))
+(elake-task :remove-task (:task-to-be-removed)
+  "删除任务:task-to-be-removed"
+  (elake-remove-task :task-to-be-removed)
+  (message "%s被删除" $@))
+
+(elake-task :execute-removed-task (:remove-task)
+  "删除任务测试"
+  (elake-execute-task :task-to-be-removed))
+
+(elake-rule ":make-\\(.+\\)" ("\\1")
   "测试rule"
-  (message "execute %s:%s" $< $@))
+  (message (shell-command-to-string (format "ls -l %s" (car $@)))))
 
 (elake-rule "[^:].*" nil
   "测试rule"
-  (message "execute %s:%s" $< $@)
   (message "touch %s" $<)
   (message (shell-command-to-string (format "touch %s" $<))))
