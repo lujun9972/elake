@@ -311,6 +311,6 @@
 		(fset 'message old-message)))))
 
 ;; 以下操作是为了兼容#!emacs --script方式
-(when command-line-args
+(when (member "-scriptload" command-line-args)
   (apply 'elake--elake command-line-args-left)
   (setq command-line-args-left nil))
