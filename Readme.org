@@ -117,6 +117,26 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
   $ elake :set-env UNKNOW-ENV:=whatever
   UNKNOW-ENV:whatever
 #+END_EXAMPLE
+
+** 给任务传递参数值
+可以在定义任务时,使用未定义的变量. 只需要通过形如"变量=值"的形式传递变量值就好. 例如
+#+BEGIN_SRC emacs-lisp  :tangle elakefile.el
+  (elake-task :say-hello-to  nil
+      "给任务传递参数"
+      (message "hello to %s" who))
+#+END_SRC
+
+若不传递参数值,则会执行出错
+#+BEGIN_EXAMPLE
+  $ elake :say-hello-to
+  Symbol's value as variable is void: who
+#+END_EXAMPLE
+
+若传递参数值,则
+#+BEGIN_EXAMPLE
+  $ elake  who=darksun :say-hello-to
+  hello to darksun
+#+END_EXAMPLE
 * 待完成事项
 + [X] 增加file类型的任务
 + [X] 增加命名空间的支持
