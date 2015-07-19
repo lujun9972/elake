@@ -22,7 +22,7 @@
 定义任务的方法是使用宏 =(elake-task 目的任务 (依赖任务列表) 任务说明字符串 任务定义内容)=. 
 
 例如我们这样定义一个做饭的过程:
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle elakefile.el
   (elake-task :purchaseVegetables nil
         "任务1 -- 买菜"
         (message  "到沃尔玛去买菜。"))
@@ -65,6 +65,14 @@
   :task1依赖于(/etc/passwd)
 #+END_EXAMPLE
 
+** 默认构建任务
+elake会将地一个定义的任务作为默认的构建任务. 当没有为elake指定构建哪个任务时,elake会构建默认的构建任务.
+
+例如,上面的例子中,我们地一个定义的任务是:purchaseVegetables任务,因此直接调用elake的结果为:
+#+BEGIN_EXAMPLE
+  $ elake
+  到沃尔玛去买菜。
+#+END_EXAMPLE
 * 待完成事项
 + [X] 增加file类型的任务
 + [X] 增加命名空间的支持
