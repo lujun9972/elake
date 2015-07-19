@@ -281,12 +281,11 @@
 	  (let* ((arg (car command-line-args-left))
 			 (command-switch (assoc arg command-switch-alist))
 			 (switch-string (car command-switch))
-			 (handler-function (cdr command-switch))
-			 (case-fold-search nil))	;正则匹配区分大小写
+			 (handler-function (cdr command-switch)))
 		(setq command-line-args-left (cdr command-line-args-left)) ;不管是不是所有的函数都返回nil,这里都需要删掉这个待处理的函数
 		(cond (handler-function
 			   (funcall handler-function switch-string))
-			  ((string-match "^\\([A-Z]+\\)=\\(.+\\)" arg)
+			  ((string-match "^\\(.+\\):=\\(.+\\)" arg)
 			   (setenv (match-string 1 arg) (match-string 2 arg))) ;设置环境变量
 			  ((string-match "^\\(.+\\)=\\(.+\\)" arg)
 			   (push (list (intern (match-string 1 arg)) (match-string 2 arg)) elake--user-params-alist)) ;设置参数
