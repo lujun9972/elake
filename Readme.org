@@ -158,6 +158,38 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
   把所有衣服扔进洗衣机。
 #+END_EXAMPLE
 
+** 在任务中删除其他任务
+使用 =(elake-remove-task task)= 可以删除其他任务.例如
+#+BEGIN_SRC emacs-lisp  :tangle elakefile.el
+  (elake-task :task-to-be-removed nil
+    "待删除的任务"
+    (message "该任务会被:remove-task删除掉,删除掉后无法执行"))
+  (elake-task :remove-task (:task-to-be-removed)
+    "删除任务:task-to-be-removed"
+    (elake-remove-task :task-to-be-removed)
+    (message "%s被删除" $@))
+
+  (elake-task :execute-removed-task (:remove-task)
+    "删除任务测试"
+    (elake-execute-task :task-to-be-removed))
+
+#+END_SRC
+
+在执行:remove-task前,可以执行:task-to-be-removed
+#+BEGIN_EXAMPLE
+  $ elake :remove-task
+  该任务会被:remove-task删除掉,删除掉后无法执行
+  (:task-to-be-removed)被删除
+#+END_EXAMPLE
+
+但执行:remove-task后,无法再执行:task-to-be-removed了
+#+BEGIN_EXAMPLE
+  $ elake :execute-removed-task
+  该任务会被:remove-task删除掉,删除掉后无法执行
+  (:task-to-be-removed)被删除
+  未定义的任务::task-to-be-removed
+#+END_EXAMPLE
+
 ** 
 * 待完成事项
 + [X] 增加file类型的任务
