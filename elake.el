@@ -136,7 +136,7 @@
 ;; 使用-f指定elakefile路径
 (defvar elake--init-file "elakefile"
   "elake的初始化文件路径,默认为elakefile")
-(defun elake--init(init-file)
+(defun elake--init()
   "环境初始化"
   ;; 清除之前定义的task
   (mapc #'elake--remove-task (hash-table-keys elake-task-relationship))
@@ -145,8 +145,7 @@
 		elake--user-params-alist nil	  ;存放用户通过命令行传入的参数
 		elake-executed-task nil ;"已经执行过的task,不要重新执行"
 		elake--ns nil
-		elake-default-task nil)
-  (load init-file nil t))
+		elake-default-task nil))
 
 (defun elake--set-init-file (file)
   "设置elake的初始化文件"
@@ -275,6 +274,7 @@
 ;; 以下方式是为了兼容elake的lisp函数方式
 (defun elake--elake(&rest args)
   "模拟emacs --script的运行方式"
+  (elake--init)
   (let ((command-line-args-left args)
 		jobs)
 	(while command-line-args-left
@@ -290,7 +290,7 @@
 			  ((string-match "^\\(.+\\)=\\(.+\\)" arg)
 			   (push (list (intern (match-string 1 arg)) (match-string 2 arg)) elake--user-params-alist)) ;设置参数
 			  (t (push arg jobs)))))
-	(elake--init elake--init-file)
+	(load elake--init-file nil t)
 	(when (and (cl-notany (lambda (option)
 							(member option args)) '("-t" "--task -p" "--preparations" "-h" "--help"))
 			   (null jobs))
