@@ -1,4 +1,4 @@
-#! emacs --script
+#! /usr/bin/emacs --script
 
 (require 'cl)
 (require 'subr-x)
@@ -39,9 +39,13 @@
   
   (defun elake--valid-task-p (task)
 	"判断`task'是否为已定义的任务,若为已定义任务则返回`task',否则返回nil"
-	(when (member task (hash-table-keys elake-task-relationship))
-	  task))
-  )
+	(cond ((elake--phony-task-p task)
+		   (when (member task (hash-table-keys elake-task-relationship))
+			 task))
+		  ((elake--file-task-p task)
+		   (when (file-exists-p (elake--get-path-from-file-task task))
+			 task))
+		  t (error "未知的任务类型[%s]" task))))
 
 ;; 定义namespace
 (defmacro elake-namespace (ns &rest body)
