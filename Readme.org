@@ -97,6 +97,26 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
   $ elake :write-blog
   未定义的任务::write-blog
 #+END_EXAMPLE
+
+** 给任务传递环境变量值
+给elake传递形如"环境变量:=值"的参数,可以设定环境变量的值
+#+BEGIN_SRC emacs-lisp  :tangle elakefile.el
+  (elake-task :set-env nil
+    "设置环境变量"
+    (message "UNKNOW-ENV:%s" (getenv "UNKNOW-ENV")))
+#+END_SRC
+
+若不传递环境变量,则有:
+#+BEGIN_EXAMPLE
+  $ elake :set-env
+  UNKNOW-ENV:nil
+#+END_EXAMPLE
+
+若传递环境变量,则:
+#+BEGIN_EXAMPLE
+  $ elake :set-env UNKNOW-ENV:=whatever
+  UNKNOW-ENV:whatever
+#+END_EXAMPLE
 * 待完成事项
 + [X] 增加file类型的任务
 + [X] 增加命名空间的支持
