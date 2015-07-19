@@ -73,6 +73,30 @@ elake会将地一个定义的任务作为默认的构建任务. 当没有为elak
   $ elake
   到沃尔玛去买菜。
 #+END_EXAMPLE
+
+** 命名空间
+elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespace 命名空间名称 其他elake命令...)=
+
+在命名空间内定义的phony任务,其完整的名称为":命名空间名称:任务名称",命名空间对file任务无效
+例如:
+#+BEGIN_SRC emacs-lisp :tangle elakefile.el
+  (elake-namespace home
+      (elake-task :write-blog (:turn-on-computer) ;注意,同一个命名空间内的依赖任务无需加命名空间前缀
+        "写博客"
+        (message  "在家写博客"))
+    (elake-task :turn-on-computer ()
+      "打开电脑"
+      (message  "打开家里的电脑")))
+#+END_SRC
+
+这里在home命名空间内定义了两个任务:":home:write-bog和:home:turn-on-computer".
+#+BEGIN_EXAMPLE
+  $ elake :home:write-blog
+  打开家里的电脑
+  在家写博客
+  $ elake :write-blog
+  未定义的任务::write-blog
+#+END_EXAMPLE
 * 待完成事项
 + [X] 增加file类型的任务
 + [X] 增加命名空间的支持
