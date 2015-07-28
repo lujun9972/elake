@@ -55,3 +55,9 @@
   "测试rule"
   (message "touch %s" $<)
   (message (shell-command-to-string (format "touch %s" $<))))
+
+(elake-task :blog (index.html (let (files)
+                                (dotimes (num 3 files)
+                                  (push (format "file-%s.html" num) files))))
+  "测试使用S-Form自动生成依赖任务"
+  (message "%s的依赖任务为%s" $< $@))

@@ -64,6 +64,14 @@
   ;; 统一prepare-task-list为list格式
   (unless (listp prepare-task-list)
 	(setq prepare-task-list (list prepare-task-list)))
+  (setq prepare-task-list (mapcar (lambda (x)
+									"将x变为symbol"
+									(intern (format "%s" x)))
+								  (mapcan (lambda (prepare-task)
+									(cond ((atom prepare-task)
+										   (list prepare-task))
+										  ((listp prepare-task)
+										   (eval prepare-task)))) prepare-task-list)))
   (setq task (elake--get-namespace-task task))
   (setq prepare-task-list (mapcar (lambda (task)
 									(if (elake--file-task-p task)

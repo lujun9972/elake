@@ -50,7 +50,6 @@
   到沃尔玛去买菜。
   做一顿香喷喷的饭菜。
 #+END_EXAMPLE
-
 ** 自动变量
 在任务定义中,可以使用$<指代目标任务,使用$@指代依赖任务列表. 例如:
 #+BEGIN_SRC emacs-lisp :tangle elakefile.el
@@ -224,6 +223,33 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
 
 #+END_EXAMPLE
 
+** 依赖任务列表中支持使用S-Form自动生成依赖任务
+依赖任务列表中支持使用S-Form自动生产依赖任务,若依赖任务为list,则该list会被作为S-Form来执行,该S-Form的执行结果应该为一个包含一个多个多个依赖任务的list.
+
+例如:
+#+BEGIN_SRC emacs-lisp  :tangle elakefile.el
+  (elake-task :blog (index.html (let (files)
+                                  (dotimes (num 3 files)
+                                    (push (format "file-%s.html" num) files))))
+    "测试使用S-Form自动生成依赖任务"
+    (message "%s的依赖任务为%s" $< $@))
+#+END_SRC
+
+表示:blog的依赖任务为index.html,file-2.html,file-1.html,file-0.html
+
+因此:
+#+BEGIN_EXAMPLE
+  ~/elake $ elake :blog
+  touch index.html
+
+  touch file-2.html
+
+  touch file-1.html
+
+  touch file-0.html
+
+  :blog的依赖任务为(index.html file-2.html file-1.html file-0.html)
+#+END_EXAMPLE
 ** 其他参数说明
 + -f 配置文件路径 :: 使用指定的文件作为加载的配置文件. 默认使用`elakefile'或`elakefile.el'或`elakefile.elc'
 + --task 任务... :: 显示任务说明,若省略后面的任务,则显示所有任务说明
@@ -243,4 +269,5 @@ elake支持命名空间的概念. 使用命名空间的格式为 =(elake-namespa
 + [X] 支持带参数的任务
 + [X] 支持命令行设置环境参数
 + [X] 提供删除已定义任务的机制
++ [X] 依赖任务列表中支持使用S-Form自动生成依赖任务
 
