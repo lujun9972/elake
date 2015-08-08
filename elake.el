@@ -20,9 +20,13 @@
 	(let ((task-name (format "%s" task)))
 	  (unless (string-prefix-p ":" task-name)
 		task-name)))
-
-  (defalias 'elake--get-path-from-file-task 'elake--file-task-p
-	"若`task'为file类型的task,则返回对应的file path")
+  (defvar elake--work-path nil
+	"存储elake的启动目录")
+  (defun elake--get-path-from-file-task (file-task)
+	"若`task'为file类型的task,则返回对应的file 绝对路径"
+	;; (message "file=[%s]" (concat (file-name-as-directory elake--work-path) (elake--file-task-p file-task)))
+	(concat (file-name-as-directory elake--work-path) (elake--file-task-p file-task))
+	)
 
   (defun elake--phony-task-p (task)
 	"判断`task'是否为phony类型的任务,这种类型的任务采取ant的方式处理,单纯的执行被依赖的任务
@@ -70,10 +74,10 @@
 									"将x变为symbol"
 									(intern (format "%s" x)))
 								  (mapcan (lambda (prepare-task)
-									(cond ((atom prepare-task)
-										   (list prepare-task))
-										  ((listp prepare-task)
-										   (eval prepare-task)))) prepare-task-list)))
+											(cond ((atom prepare-task)
+												   (list prepare-task))
+												  ((listp prepare-task)
+												   (eval prepare-task)))) prepare-task-list)))
   (setq task (elake--get-namespace-task task))
   (setq prepare-task-list (mapcar (lambda (task)
 									(if (elake--file-task-p task)
@@ -155,7 +159,8 @@
 		elake--user-params-alist nil	  ;存放用户通过命令行传入的参数
 		elake-executed-task nil ;"已经执行过的task,不要重新执行"
 		elake--ns nil
-		elake-default-task nil))
+		elake-default-task nil
+		elake--work-path default-directory))
 
 (defun elake--set-init-file (file)
   "设置elake的初始化文件"
@@ -238,7 +243,7 @@
 				(elake--task-executed-p task))
 		   nil)								;phony任务已执行过,则不再执行
 		  ((and (elake--file-task-p task)
-				(file-exists-p (elake--file-task-p task)) ;file任务的file已存在
+				(file-exists-p (elake--get-path-from-file-task task)) ;file任务的file已存在
 				;; (cl-notany #'elake--need-to-execute-task-p preparations) ;且不存在 "未处理的依赖任务或不存在的依赖文件"
 				(cl-notany (lambda (preparation-file)
 							 (file-newer-than-file-p preparation-file (elake--file-task-p task)))
@@ -259,7 +264,7 @@
 			(t (error "错误的依赖类型:%s" (type-of prepare-task-list)))))
 	(when (elake--need-to-execute-task-p task )
 	  (push task elake-executed-task)
-	  (eval `(let ,elake--user-params-alist
+	  (eval `(let ,(push `(default-directory ,elake--work-path) elake--user-params-alist)
 			   (funcall task task prepare-task-list))))))
 
 (defmacro elake-execute-task (task)
