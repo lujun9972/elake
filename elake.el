@@ -43,10 +43,11 @@
 		   (when (member task (hash-table-keys elake-task-relationship))
 			 task))
 		  ((elake--file-task-p task)
+		   ;; (message (pwd))
 		   (when (or (file-exists-p (elake--get-path-from-file-task task))
 					 (member task (hash-table-keys elake-task-relationship)))
 			 task))
-		  t (error "未知的任务类型[%s]" task))))
+		  (t (error "未知的任务类型[%s]" task)))))
 
 ;; 定义namespace
 (defmacro elake-namespace (ns &rest body)
