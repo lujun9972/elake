@@ -253,19 +253,21 @@
 
 (defun elake--execute-task (task)
   "运行`task'标识的任务,会预先运行它的prepare-tasks"
-  (or (elake--valid-task-p task)
-	  (elake--generate-task-by-rule task)
-	  (error "未定义的任务:%s"task ))
-  (let ((prepare-task-list (elake--get-task-preparations task)))
-	;; 执行预备条件
-	(when prepare-task-list
-	  (cond ((sequencep prepare-task-list)
-			 (mapc #'elake--execute-task prepare-task-list))
-			(t (error "错误的依赖类型:%s" (type-of prepare-task-list)))))
-	(when (elake--need-to-execute-task-p task )
-	  (push task elake-executed-task)
-	  (eval `(let ,(push `(default-directory ,elake--work-path) elake--user-params-alist)
-			   (funcall task task prepare-task-list))))))
+  (save-excursion 
+	(save-restriction
+	  (or (elake--valid-task-p task)
+		  (elake--generate-task-by-rule task)
+		  (error "未定义的任务:%s"task ))
+	  (let ((prepare-task-list (elake--get-task-preparations task)))
+		;; 执行预备条件
+		(when prepare-task-list
+		  (cond ((sequencep prepare-task-list)
+				 (mapc #'elake--execute-task prepare-task-list))
+				(t (error "错误的依赖类型:%s" (type-of prepare-task-list)))))
+		(when (elake--need-to-execute-task-p task )
+		  (push task elake-executed-task)
+		  (eval `(let ,elake--user-params-alist
+				   (funcall task task prepare-task-list))))))))
 
 (defmacro elake-execute-task (task)
   (let ((valid-task (or (elake--valid-task-p (elake--get-namespace-task task))
