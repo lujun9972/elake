@@ -43,7 +43,8 @@
 		   (when (member task (hash-table-keys elake-task-relationship))
 			 task))
 		  ((elake--file-task-p task)
-		   (when (file-exists-p (elake--get-path-from-file-task task))
+		   (when (or (file-exists-p (elake--get-path-from-file-task task))
+					 (member task (hash-table-keys elake-task-relationship)))
 			 task))
 		  t (error "未知的任务类型[%s]" task))))
 
