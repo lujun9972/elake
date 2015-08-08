@@ -268,7 +268,7 @@
 	`(elake--execute-task (quote ,valid-task))))
 
 ;; elake环境初始化
-(add-to-list 'load-path (file-name-directory (or load-file-name (buffer-file-name))))
+(add-to-list 'load-path default-directory)
 
 ;; 设置参数处理函数
 (add-to-list 'command-switch-alist '("-f" . elake-set-init-file))
