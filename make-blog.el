@@ -1,4 +1,6 @@
+(package-initialize)
 (require 'org)
+(require 'htmlize nil t)
 
 (defun files-in-directory-with-subdir (dir &optional full match nosort)
   "类似directory-files,但是会递归搜索子目录,且不返回目录"
@@ -23,8 +25,10 @@
   (message "%s:%s" $< $@)
   (with-temp-file (format "%s" $<)
 	(insert "<?xml version=\"1.0\" encoding=\"utf-8\"?>")
+	(insert "<center>")
 	(dolist (link $@)
-	  (insert (format "<a href='%s'>%s</a><br>\n" link link)))))
+	  (insert (format "<a href='%s'>%s</a><br>\n" link link)))
+	(insert "</center>")))
 
 (elake-task :clean ()
   ""
