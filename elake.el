@@ -1,7 +1,14 @@
 #! /usr/bin/emacs --script
+;;; elake.el --- elisp make
+
+
+;;; Commentary:
+;; 
 
 (require 'cl)
 (require 'subr-x)
+;;; Code:
+
 (eval-when-compile
   (defvar elake-task-relationship (make-hash-table)
 	"存放task之间的依赖关系")
@@ -55,14 +62,24 @@
 
 ;; 定义namespace
 (defmacro elake-namespace (ns &rest body)
+  "定义命名空间.
+
+在命名空间内定义的task在命名空间外使用需要加上命名空间的前缀,
+格式为\":NS:task-id\".
+Optional argument BODY elake的其他操作."
+  (declare (indent 2))
   (declare (indent 2))
   (let ((elake--ns ns))
 	`(progn
 	   ,@(mapcar #'macroexpand body))
 	))
+
 ;; 定义task
 (defmacro elake-task (task prepare-task-list &optional doc-string &rest body)
-  "使用elask-task宏来定义task"
+  "使用elask-task宏来定义TASK.
+Argument PREPARE-TASK-LIST `TASK'的前置任务列表.
+Optional argument DOC-STRING 任务`TASK'的说明.
+Optional argument BODY 任务`TASK'的具体定义."
   (declare (indent defun) (doc-string 3))
   ;; 第一个任务设置为默认任务
   (unless elake-default-task
@@ -92,13 +109,15 @@
   )
 ;; 根据模式来自动生产任务
 (defvar elake-rule-template-alist nil
-  "存放定义的规则模板")
+  "存放定义的规则模板.")
 (defmacro elake-rule (rule prepare-rule-list &rest body)
-  "使用elask-rule宏来定义rule"
+  "使用elask-rule宏来定义RULE.
+Argument PREPARE-RULE-LIST 产生前置任务的规则.
+Optional argument BODY 根据规则产生的任务的具体定义."
   (declare (indent defun))
   ;; 统一prepare-task-list为list格式
   (unless (stringp rule)
-	(error "rule[%s]需要使用字符串格式" rule))
+	(error "Rule[%s]需要使用字符串格式" rule))
   (unless (listp prepare-rule-list)
 	(setq prepare-rule-list (list prepare-rule-list)))
   (unless (cl-every #'stringp prepare-rule-list)
@@ -107,7 +126,7 @@
   `(push '(,(format "^%s$" rule) ,prepare-rule-list ,body) elake-rule-template-alist))
 
 (defun elake--generate-task-by-rule (task)
-  "根据规则模板来自动生成任务. 若能根据规则生成任务,则返回任务,否则返回nil"
+  "根据规则模板来自动生成`TASK'任务. 若能根据规则生成任务,则返回任务,否则返回nil."
   (let* ((task-name (format "%s" task))
 		 (template (assoc-if (lambda (rule)
 							   (string-match-p rule task-name)) elake-rule-template-alist)))
@@ -122,7 +141,7 @@
 
 ;; 定义删除任务的函数
 (defun elake--remove-task (task)
-  "删除指定的task"
+  "删除id为`TASK'的任务."
   (remhash task elake-task-relationship)
   (fmakunbound task)			;删除已定义函数
   (setq elake-executed-task (remove task elake-executed-task))
@@ -130,7 +149,7 @@
 	(setq elake-default-task (car (reverse (hash-table-keys elake-task-relationship))))))
 
 (defmacro elake-remove-task (task)
-  "删除指定task"
+  "删除id为`TASK'的任务."
   (let ((valid-task (or (elake--valid-task-p (elake--get-namespace-task task))
 						(elake--valid-task-p task))))
 	(unless valid-task
@@ -139,7 +158,7 @@
 
 ;; command line args处理函数
 (defun command-line-get-args-to-next-option ()
-  "用于获取直到下一个option为止的所有command line args,会将获取的command line args移出`command-line-args-left'变量"
+  "用于获取直到下一个option为止的所有command line args,会将获取的command line args移出`command-line-args-left'变量."
   (let* ((next-option-position (or (cl-position-if (lambda (arg)
 													 (string-prefix-p "-" arg)) command-line-args-left)
 								   (length command-line-args-left)))
@@ -149,7 +168,7 @@
 
 ;; 使用-f指定elakefile路径
 (defvar elake--init-file "elakefile"
-  "elake的初始化文件路径,默认为elakefile")
+  "Elake的初始化文件路径,默认为elakefile.")
 (defun elake--init()
   "环境初始化"
   ;; 清除之前定义的task
@@ -163,57 +182,60 @@
 		elake--work-path default-directory))
 
 (defun elake--set-init-file (file)
-  "设置elake的初始化文件"
+  "设置elake的初始化文件为`FILE'."
   (setq elake--init-file file))
 
 (defun elake-set-init-file (option)
-  "设置elake的初始化文件"
+  "设置elake的初始化文件.
+Argument OPTION 无意义,纯粹为了满足elake script的调用机制."
   (elake--set-init-file (car command-line-args-left))
   (setq command-line-args-left (cdr command-line-args-left)))
 
 ;; 显示任务说明
 (defun elake--show-task-documentation (task)
-  "显示`task'指定任务的说明"
+  "显示`TASK'指定任务的说明."
   (when (stringp task)
 	(setq task (intern task)))
   (message "%s:%s" task (documentation task)))
 
 (defun elake--show-tasks-documentation (&rest tasks)
-  "显示`tasks'指定任务的说明"
+  "显示`TASKS'指定任务的说明."
   (when (null tasks)
 	(require 'subr-x)
 	(setq tasks (hash-table-keys elake-task-relationship)))
   (mapc #'elake--show-task-documentation tasks))
 
 (defun elake-show-tasks-documentation (option)
-  "显示指定任务的说明文档"
+  "显示指定任务的说明文档.
+Argument OPTION 无意义,纯粹为了满足elake script的调用机."
   (apply 'elake--show-tasks-documentation (command-line-get-args-to-next-option)))
 
 ;; 显示task的准备条件
 (defun elake--get-task-preparations (task)
-  "返回`task'的依赖任务"
+  "返回`TASK'的依赖任务."
   (gethash task elake-task-relationship))
 
 
 (defun elake--show-task-preparations (task)
-  "显示`task'指定任务的说明"
+  "显示`TASK'指定任务的说明."
   (when (stringp task)
 	(setq task (intern task)))
   (message "%s:%s" task (elake--get-task-preparations task)))
 
 (defun elake--show-tasks-preparations (&rest tasks)
-  "显示`tasks'指定任务的说明"
+  "显示`TASKS'指定任务的说明."
   (when (null tasks)
 	(setq tasks (hash-table-keys elake-task-relationship)))
   (mapc #'elake--show-task-preparations tasks))
 
 (defun elake-show-tasks-preparations (option)
-  "显示指定任务的依赖任务"
+  "显示指定任务的依赖任务.
+Argument OPTION 无意义,纯粹为了满足elake script的调用机."
   (apply 'elake--show-tasks-preparations (mapcar #'read (command-line-get-args-to-next-option))))
 
 ;; 帮助的函数
 (defun elake--show-option-help (option)
-  "根据`command-switch-alist'显示`option'的帮助信息"
+  "根据`command-switch-alist'显示`OPTION'的帮助信息."
   (let* ((command-switch (assoc option command-switch-alist))
 		 (option (car command-switch))
 		 (fn (cdr command-switch))
@@ -221,23 +243,24 @@
 	(message "%s:\t%s" option help)))
 
 (defun elake--show-options-help (&rest options)
-  "根据`command-switch-alist'显示`options'中各个option的帮助信息"
+  "根据`command-switch-alist'显示`OPTIONS'中各个option的帮助信息."
   (when (null options)
 	(setq options (mapcar #'car command-switch-alist)))
   (mapc #'elake--show-option-help options))
 
 (defun elake-show-help (option)
-  "显示帮助信息"
+  "显示帮助信息.
+Argument OPTION 无意义,纯粹为了满足elake script的调用机."
   (apply 'elake--show-options-help (command-line-get-args-to-next-option)))
 
 ;; 执行task函数
 
 (defun elake--task-executed-p (task)
-  "判断`task'是否已经执行"
+  "判断`TASK'是否已经执行."
   (member task elake-executed-task))
 
 (defun elake--need-to-execute-task-p (task)
-  "判断`task'是否需要执行"
+  "判断`TASK'是否需要执行."
   (let ((preparations (elake--get-task-preparations task)))
 	(cond ((and (elake--phony-task-p task)
 				(elake--task-executed-p task))
@@ -252,8 +275,8 @@
 		  (t t))))						;否则需要执行
 
 (defun elake--execute-task (task)
-  "运行`task'标识的任务,会预先运行它的prepare-tasks"
-  (save-excursion 
+  "运行`TASK'标识的任务,会预先运行它的prepare-tasks."
+  (save-excursion
 	(save-restriction
 	  (or (elake--valid-task-p task)
 		  (elake--generate-task-by-rule task)
@@ -270,6 +293,7 @@
 				   (funcall task task prepare-task-list))))))))
 
 (defmacro elake-execute-task (task)
+  "运行`TASK'标识的任务,会预先运行它的prepare-tasks."
   (let ((valid-task (or (elake--valid-task-p (elake--get-namespace-task task))
 						(elake--valid-task-p task))))
 	(unless valid-task
@@ -315,9 +339,10 @@
 	(mapc #'elake--execute-task (mapcar #'intern jobs))))
 
 (defun elake (&rest args)
+  "该函数供eshell中使用elake,`ARGS'为传递給elake的各种参数."
   (setq args (mapcar (lambda (x)
 					   (format "%s" x)) args)) ;统一转换为字符串格式
-  (with-output-to-string 
+  (with-output-to-string
 	(let ((old-message (symbol-function 'message)))
 	  (unwind-protect
 		  (progn
@@ -331,3 +356,7 @@
 (when (member "-scriptload" command-line-args)
   (apply 'elake--elake command-line-args-left)
   (setq command-line-args-left nil))
+
+(provide 'elake)
+
+;;; elake.el ends here
